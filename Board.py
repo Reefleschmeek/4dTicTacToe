@@ -33,14 +33,23 @@ class Board:
     def show(self) -> None:
         for y in range(self.size - 1, -1, -1):
             for w in range(self.size - 1, -1, -1):
+                if w != self.size - 1:
+                    print('  ', end='')
+                    grid_str = '|'.join(['———'] * self.size)
+                    print('    '.join([grid_str] * self.size))
+                print('  ', end='')
                 for x in range(self.size):
                     for z in range(self.size):
+                        if z != 0:
+                            print('|', end='')
                         symbol = self[Vec4(x, y, z, w)]
                         if symbol:
-                            print(symbol, end='')
+                            print(' ' + symbol + ' ', end='')
                         else:
-                            print('.', end='')
-                    print(' ', end='')
+                            print('   ', end='')
+                    print('    ', end='')
+                print()
+            if y != 0:
                 print()
             print()
 

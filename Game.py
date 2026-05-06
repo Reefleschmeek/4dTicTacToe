@@ -8,6 +8,7 @@ import time
 default_symbols = ['X', 'O', 'Y', 'Z']
 
 class GameState:
+
     WAITING = 0
     PLAYING = 1
     PAUSED = 2
@@ -23,8 +24,9 @@ class Game:
     state: int
     history: list[tuple[str, Vec4]]
     scoring_sets: list[tuple[Vec4, ...]]
+    consecutive_forfeits: int
 
-    def __init__(self, size: int, time_limit_ms: float, players: list[Type[Player]], symbols: list[str] = None) -> None:
+    def __init__(self, size: int, players: list[Type[Player]], symbols: list[str] = None, time_limit_ms: float = 0.0) -> None:
         if size < 2:
             raise ValueError('Game size must be at least 2')
         if len(players) < 2:
@@ -35,15 +37,16 @@ class Game:
             symbols = default_symbols
         if len(players) > len(symbols):
             raise ValueError('Not enough symbols for the number of players')
-        symbols = symbols[:len(players)]
+        self.symbols = symbols[:len(players)]
         self.size = size
         self.time_limit_ms = time_limit_ms
-        self.players = [players[i](symbols, symbols[i]) for i in range(len(players))]
+        self.players = [players[i](self.symbols, self.symbols[i]) for i in range(len(players))]
         self.board = Board(self.size)
         self.turn = 0
         self.state = GameState.WAITING
         self.history = []
         self.scoring_sets = self.getScoringSets()
+        self.consecutive_forfeits = 0
     
     def getScoringSets(self) -> list[tuple[Vec4, ...]]:
         step_vectors = []
@@ -74,21 +77,20 @@ class Game:
         self.board = Board(self.size)
         self.turn = 0
         self.state = GameState.WAITING
-
+        self.consecutive_forfeits = 0
+    
     def play(self) -> None:
         print('\nStarting new game...\n')
         self.state = GameState.PLAYING
         while self.state == GameState.PLAYING:
             self.board.show()
             self.playTurn()
-            if self.turn >= 4:
-                self.state = GameState.FINISHED
-        self.board.show()
-        print('Game over: Draw')
+            if self.consecutive_forfeits >= len(self.players) or self.board.isFull():
+                self.finish()
 
     def playTurn(self) -> None:
         player = self.players[self.turn % len(self.players)]
-        print(f'Player "{player.symbol}" ({player})\'s turn...\n')
+        print(f'Player "{player.symbol}" ({player})\'s turn...')
         t0 = time.time()
         move = player.query(self.board.copy(), self.time_limit_ms)
         dt = (time.time() - t0) * 1000
@@ -101,7 +103,7 @@ class Game:
             self.makeMove(player.symbol, None)
     
     def validateMove(self, move: Vec4 | tuple[int, int, int, int], time_ms: float) -> bool:
-        if time_ms > self.time_limit_ms:
+        if self.time_limit_ms and time_ms > self.time_limit_ms:
             print(f'Invalid move: Exceeded time limit of {self.time_limit_ms} ms')
             return False
         if not isinstance(move, Vec4 | tuple) or (isinstance(move, tuple) and len(move) != 4):
@@ -116,8 +118,11 @@ class Game:
         return True
 
     def makeMove(self, symbol: str, move: Vec4) -> None:
-        if move != None:
+        if move is None:
+            self.consecutive_forfeits += 1
+        else:
             self.board[move] = symbol
+            self.consecutive_forfeits = 0
         self.history.append((symbol, move))
         self.turn += 1
     
@@ -126,12 +131,31 @@ class Game:
             raise ValueError('No moves to revert')
         move = self.history.pop()[1]
         self.board[move] = ''
+        if move is None:
+            self.consecutive_forfeits -= 1
+        else:
+            self.consecutive_forfeits = 0
         self.turn -= 1
     
-    def getScores(self) -> dict[str, int]:
-        scores = [0 for player in self.players]
+    def finish(self) -> None:
+        self.state = GameState.FINISHED
+        self.board.show()
+        scores = self.countScores()
+        print('Game finished. Final scores:')
+        for i, score in enumerate(scores):
+            if score == max(scores):
+                medal = ' 🏆'
+            else:
+                medal = ''
+            print(f'Player "{self.symbols[i]}" ({self.players[i]}): {score}{medal}')
+        print()
+    
+    def countScores(self) -> dict[str, int]:
+        idx_to_symbol = {symbol: i for i, symbol in enumerate(self.symbols)}
+        scores = [0 for _ in self.symbols]
         for scoring_set in self.scoring_sets:
             symbols = [self.board[pos] for pos in scoring_set]
-            if all(symbols) and len(set(symbols)) == 1:
-                scores[symbols[0]] += 1
+            origin_symbol = symbols[0]
+            if origin_symbol and all(symbol == origin_symbol for symbol in symbols):
+                scores[idx_to_symbol[origin_symbol]] += 1
         return scores
