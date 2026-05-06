@@ -5,7 +5,7 @@ from typing import Type
 from itertools import product
 import time
 
-default_symbols = ['X', 'O', 'Y', 'Z']
+default_symbols = ['X', 'O', 'Y', 'Z', 'A', 'B', 'C', 'D']
 
 class GameState:
 
