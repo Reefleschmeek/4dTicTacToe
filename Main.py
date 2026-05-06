@@ -1,5 +1,6 @@
 from Game import Game
-from Player import Player
+from RandomPlayer import RandomPlayer
 
-game = Game()
-game.displayBoard()
+players = [RandomPlayer, RandomPlayer]
+game = Game(players=players, size=3, time_limit_ms=10_000)
+game.play()
