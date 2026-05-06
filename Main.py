@@ -1,8 +1,6 @@
 from Game import Game
-from HumanPlayer import HumanPlayer
 from RandomPlayer import RandomPlayer
 
-players = [RandomPlayer] * 2
-# players[0] = HumanPlayer
-game = Game(players=players, size=3)
+players = [RandomPlayer, RandomPlayer]
+game = Game(players=players, size=3, time_limit_ms=10_000)
 game.play()

@@ -40,7 +40,7 @@ class Game:
         self.symbols = symbols[:len(players)]
         self.size = size
         self.time_limit_ms = time_limit_ms
-        self.players = [players[i](self.symbols, self.symbols[i]) for i in range(len(players))]
+        self.players = [players[i](self.symbols, self.symbols[i], self.size) for i in range(len(players))]
         self.board = Board(self.size)
         self.turn = 0
         self.state = GameState.WAITING
