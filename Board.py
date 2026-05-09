@@ -1,13 +1,16 @@
 from Vec4 import Vec4
 from typing import Self
+import Util
 
 class Board:
 
     size: int
+    color_map: dict[str, str]
     cells: list[list[list[list[str]]]]
 
-    def __init__(self, size: int) -> None:
+    def __init__(self, size: int, color_map: dict[str, str] = None) -> None:
         self.size = size
+        self.color_map = color_map if color_map is not None else {}
         self.cells = [
             [[['' for w in range(self.size)] for z in range(self.size)] for y in range(self.size)] for x in range(self.size)
         ]
@@ -22,7 +25,7 @@ class Board:
         return True
     
     def copy(self) -> Self:
-        new_board = Board(self.size)
+        new_board = Board(self.size, self.color_map)
         for x in range(self.size):
             for y in range(self.size):
                 for z in range(self.size):
@@ -35,16 +38,17 @@ class Board:
             for w in range(self.size - 1, -1, -1):
                 if w != self.size - 1:
                     print('  ', end='')
-                    grid_str = '|'.join(['———'] * self.size)
+                    grid_str = '╋'.join(['━━━'] * self.size)
                     print('    '.join([grid_str] * self.size))
                 print('  ', end='')
                 for x in range(self.size):
                     for z in range(self.size):
                         if z != 0:
-                            print('|', end='')
+                            print('┃', end='')
                         symbol = self[Vec4(x, y, z, w)]
                         if symbol:
-                            print(' ' + symbol + ' ', end='')
+                            char = Util.style(symbol, self.color_map.get(symbol, 'white'), bold=True)
+                            print(' ' + char + ' ', end='')
                         else:
                             print('   ', end='')
                     print('    ', end='')
