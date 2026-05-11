@@ -91,6 +91,6 @@ if __name__ == '__main__':
                 time_limit_ms = menu.data['time_limit_ms'],
             )
             game.play()
-            print('Game over! Press any key to continue...')
+            print('Press any key to continue...')
             readchar.readkey()
 
