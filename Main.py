@@ -41,35 +41,23 @@ menu_tree = MenuOptions(
     title = 'Main Menu',
     children = {
         'Start Game': MenuReturn('start'),
-        'Settings': MenuOptions(
-            title = 'Settings',
+        'Add Players': MenuOptions(
+            title = 'Choose Player to Add',
             children = {
-                'Edit Players': MenuOptions(
-                    title = 'Edit Players',
-                    children = {
-                        'Add Players': MenuOptions(
-                            title = 'Choose Player to Add',
-                            children = {
-                                **{player: MenuCallback(
-                                    lambda menu, player=player: addPlayer(menu, player),
-                                ) for player in PlayerLoader.classes},
-                                'Back': MenuNavigate('Settings', 'Edit Players')
-                            },
-                        ),
-                        'Clear Players': MenuCallback(clearPlayers),
-                        'Back': MenuNavigate('Settings'),
-                    }
-                ),
-                'Set Board Size': MenuInput(
-                    title = 'Enter board size (integer >= 2):',
-                    handler = setBoardSize,
-                ),
-                'Set Time Limit': MenuInput(
-                    title = 'Enter time limit in milliseconds (integer >= 0):',
-                    handler = setTimeLimit,
-                ),
-                'Back': MenuNavigate(),
+                **{player: MenuCallback(
+                    lambda menu, player=player: addPlayer(menu, player),
+                ) for player in PlayerLoader.classes},
+                'Back': MenuNavigate()
             },
+        ),
+        'Clear Players': MenuCallback(clearPlayers),
+        'Set Board Size': MenuInput(
+            title = 'Enter board size (integer >= 2):',
+            handler = setBoardSize,
+        ),
+        'Set Time Limit': MenuInput(
+            title = 'Enter time limit in milliseconds (integer >= 0):',
+            handler = setTimeLimit,
         ),
         'Quit': MenuReturn('quit'),
     },

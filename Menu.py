@@ -47,9 +47,9 @@ class MenuNavigate(MenuAction):
 class MenuScreen:
 
     title: str
-    children: dict[str, MenuAction | MenuScreen]
+    children: dict[str, 'MenuAction | MenuScreen']
 
-    def __init__(self, title: str, children: dict[str, MenuAction | MenuScreen] = None):
+    def __init__(self, title: str, children: dict[str, 'MenuAction | MenuScreen'] = None):
         self.title = title
         self.children = children or {}
     
@@ -61,7 +61,7 @@ class MenuScreen:
 
 class MenuOptions(MenuScreen):
 
-    def __init__(self, title: str, children: dict[str, MenuAction | MenuScreen]):
+    def __init__(self, title: str, children: dict[str, 'MenuAction | MenuScreen']):
         super().__init__(title)
         self.children = children
 
