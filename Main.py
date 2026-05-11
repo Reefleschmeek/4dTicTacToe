@@ -1,59 +1,92 @@
-from Menu import Menu
+from Menu import Menu, MenuOptions, MenuInput, MenuCallback, MenuReturn, MenuNavigate
 from Game import Game
-from Player import Player
-from pathlib import Path
-import sys
-import argparse
-import importlib
-import importlib.util
+import PlayerLoader
 
-def loadSubmission(name: str) -> type[Player]:
-    username, botname = name.split('.')
-    path = Path('submissions') / username / f'{botname}.py'
-    if not path.exists():
-        raise ValueError(f'No submission found at {path}')
-    spec = importlib.util.spec_from_file_location(botname, path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    for obj in vars(module).values():
-        if isinstance(obj, type) and issubclass(obj, Player) and obj is not Player:
-            return obj
-    raise ValueError(f'No Player subclass found in {path}')
+def addPlayer(menu: Menu, player: str):
+    menu.data['players'].append(player)
 
-def loadBuiltin(name: str) -> type[Player]:
-    path = Path(f'{name}.py')
-    if not path.exists():
-        raise ValueError(f'No built-in player named {name}')
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    for obj in vars(module).values():
-        if isinstance(obj, type) and issubclass(obj, Player) and obj is not Player:
-            return obj
-    raise ValueError(f'No Player subclass found in {path}')
+def clearPlayers(menu: Menu):
+    menu.data['players'].clear()
 
-def resolvePlayer(name: str) -> type[Player]:
-    if '.' in name:
-        return loadSubmission(name)
-    return loadBuiltin(name)
+def setBoardSize(menu: Menu, str: str):
+    if not str.isdigit():
+        return
+    size = int(str)
+    if size >= 2:
+        menu.data['board_size'] = size
+
+def setTimeLimit(menu: Menu, str: str):
+    time_limit = int(str)
+    if time_limit >= 0:
+        menu.data['time_limit_ms'] = time_limit
+
+def displayMenu(menu: Menu):
+    print('Players:')
+    if menu.data['players']:
+        for i, player in enumerate(menu.data['players']):
+            print(f'  {i + 1}. {player}')
+    else:
+        print('  None')
+    print(f'Board Size: {menu.data['board_size']}')
+    print(f'Time Limit: {menu.data['time_limit_ms']} ms')
+
+menu_data = {
+    'players': [],
+    'board_size': 3,
+    'time_limit_ms': 0,
+}
+
+menu_tree = MenuOptions(
+    title = 'Main Menu',
+    children = {
+        'Start Game': MenuReturn('start'),
+        'Settings': MenuOptions(
+            title = 'Settings',
+            children = {
+                'Edit Players': MenuOptions(
+                    title = 'Edit Players',
+                    children = {
+                        'Add Players': MenuOptions(
+                            title = 'Choose Player to Add',
+                            children = {
+                                **{player: MenuCallback(
+                                    lambda menu, player=player: addPlayer(menu, player),
+                                ) for player in PlayerLoader.classes},
+                                'Back': MenuNavigate('Settings', 'Edit Players')
+                            },
+                        ),
+                        'Clear Players': MenuCallback(clearPlayers),
+                        'Back': MenuNavigate('Settings'),
+                    }
+                ),
+                'Set Board Size': MenuInput(
+                    title = 'Enter board size (integer >= 2):',
+                    handler = setBoardSize,
+                ),
+                'Set Time Limit': MenuInput(
+                    title = 'Enter time limit in milliseconds (integer >= 0):',
+                    handler = setTimeLimit,
+                ),
+                'Back': MenuNavigate(),
+            },
+        ),
+        'Quit': MenuReturn('quit'),
+    },
+)
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('players', nargs='+')
-    parser.add_argument('--size', type=int, default=3)
-    parser.add_argument('--time', type=int, default=0, help='Time limit per turn in milliseconds')
-    args = parser.parse_args()
+    ret = None
 
-    if len(args.players) < 2:
-        print('At least two players are required')
-        sys.exit(1)
+    while ret != 'quit':
     
-    menu = Menu()
-    choice = menu.prompt('Select an option:', ['Start Game', 'Exit'])
-    if choice == 1:
-        sys.exit(0)
+        menu = Menu(menu_tree, menu_data, displayMenu)
+        ret = menu.start()
 
-    players = [resolvePlayer(name) for name in args.players]
-    game = Game(players=players, size=args.size, time_limit_ms=args.time)
-    game.play()
+        if ret == 'start':
+            game = Game(
+                players = [PlayerLoader.classes[player] for player in menu.data['players']],
+                size = menu.data['board_size'],
+                time_limit_ms = menu.data['time_limit_ms'],
+            )
+            game.play()
