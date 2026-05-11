@@ -1,6 +1,7 @@
 from Menu import Menu, MenuOptions, MenuInput, MenuCallback, MenuReturn, MenuNavigate
 from Game import Game
 import PlayerLoader
+import readchar
 
 def addPlayer(menu: Menu, player: str):
     menu.data['players'].append(player)
@@ -90,3 +91,6 @@ if __name__ == '__main__':
                 time_limit_ms = menu.data['time_limit_ms'],
             )
             game.play()
+            print('Game over! Press any key to continue...')
+            readchar.readkey()
+
